@@ -7,7 +7,7 @@ export interface LoveAnalysis {
 }
 
 export const analyzeRelationship = async (score: number, answers: any): Promise<LoveAnalysis | null> => {
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3004";
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3005";
 
   try {
     const response = await fetch(`${API_BASE_URL}/api/ai/analyze-love`, {

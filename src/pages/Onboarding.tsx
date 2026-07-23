@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Button, TextField, Spacing, Text } from '@toss/tds-mobile';
-import { Heart } from 'lucide-react';
+import { Button, TextField, Text } from '@toss/tds-mobile';
 
 /**
  * 온보딩 페이지
@@ -21,11 +20,11 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col p-6 pt-10">
+    <div className="min-h-screen bg-white flex flex-col p-6 pt-10">
       <div className="w-full max-w-md mx-auto flex-1 flex flex-col">
         {/* 헤더 */}
         <div className="text-center mb-3">
-          <Text typography="t2" fontWeight="bold" className="text-gray-900 dark:text-white block">
+          <Text typography="t2" fontWeight="bold" className="text-gray-900 block">
             환영합니다
           </Text>
           <Text typography="t2" className="block mt-1">
@@ -34,13 +33,13 @@ export default function Onboarding() {
         </div>
 
         <div className="text-center mb-10 px-4">
-          <Text typography="t6" color="gray600" className="dark:text-gray-400 block break-keep">
+          <Text typography="t6" color="gray600" className="block break-keep">
             두 분의 소중한 기록을 위해<br />몇 가지 정보를 알려주세요.
           </Text>
         </div>
 
         {/* 입력 폼 */}
-        <div className="space-y-8 p-6 border dark:border-gray-700">
+        <div className="space-y-8 p-6 border">
           <div className="space-y-2">
             <Text typography="t7" fontWeight="bold" color="gray700" className="ml-1">내 이름</Text>
             <TextField

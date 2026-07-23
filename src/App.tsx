@@ -1,9 +1,8 @@
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
-import Settings from './pages/Settings';
 import Diagnosis from './pages/Diagnosis';
 import Result from './pages/Result';
 
@@ -26,7 +25,6 @@ function AppRoutes() {
   // 온보딩 완료 후 전체 앱 라우트 표시
   return (
     <Routes>
-      <Route path="/settings" element={<Settings />} />
       <Route path="/diagnosis" element={<Diagnosis />} />
       <Route path="/result" element={<Result />} />
       <Route path="/" element={<Home />} />
@@ -36,18 +34,14 @@ function AppRoutes() {
 
 /**
  * 메인 앱 컴포넌트
- * - MemoryRouter를 사용하여 SPA 라우팅 구현
- * - URL 해시를 파싱하여 딥링크 지원
+ * - SPA 라우팅 구현
  */
 export default function App() {
-  // URL 경로 파싱 (딥링크 지원)
-  const path = window.location.hash.replace('#', '') || '/';
-
   return (
     <AppProvider>
-      <MemoryRouter initialEntries={[path]}>
+      <HashRouter>
         <AppRoutes />
-      </MemoryRouter>
+      </HashRouter>
     </AppProvider>
   );
 }

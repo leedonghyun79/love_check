@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Text } from '@toss/tds-mobile';
 import { Home, Share2, RefreshCw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { share } from '@apps-in-toss/web-framework';
 import { analyzeRelationship } from '../services/aiService';
@@ -15,25 +15,39 @@ export default function Result() {
   const [isLoading, setIsLoading] = useState(true);
   const [aiAdvice, setAiAdvice] = useState('');
   const [aiSummary, setAiSummary] = useState('');
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    document.title = '진단 결과';
+  }, []);
 
   const averageScore = answers.length > 0
     ? Math.round(answers.reduce((a: number, b: number) => a + b, 0) / answers.length)
     : 0;
 
   useEffect(() => {
+    if (hasFetched.current) return;
+
     const fetchAI = async () => {
       setIsLoading(true);
-      const analysis = await analyzeRelationship(averageScore, answers);
+      try {
+        const analysis = await analyzeRelationship(averageScore, answers);
 
-      const advice = analysis
-        ? `${analysis.summary}\n\n${analysis.analysis}\n\n💡 조언: ${analysis.advice}\n\n✨ 실천 팁: ${analysis.action_tip}`
-        : generateMockAdvice(averageScore);
+        const advice = analysis
+          ? `${analysis.summary}\n\n${analysis.analysis}\n\n💡 조언: ${analysis.advice}\n\n✨ 실천 팁: ${analysis.action_tip}`
+          : generateMockAdvice(averageScore);
 
-      setAiAdvice(advice);
-      if (analysis) setAiSummary(analysis.summary);
+        setAiAdvice(advice);
+        if (analysis) setAiSummary(analysis.summary);
 
-      addHistory({ type, score: averageScore, advice });
-      setIsLoading(false);
+        addHistory({ type, score: averageScore, advice });
+        hasFetched.current = true;
+      } catch (error) {
+        console.error('Failed to fetch AI advice:', error);
+        setAiAdvice(generateMockAdvice(averageScore));
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchAI();
@@ -65,11 +79,27 @@ export default function Result() {
     return '비 내림 🌧️';
   };
 
+  const statusText = getStatusText(averageScore);
+
+  const handleShare = async () => {
+    let shareLink = '';
+    try {
+      const { getTossShareLink } = await import('@apps-in-toss/web-framework');
+      shareLink = await getTossShareLink('intoss://breakuptest');
+    } catch (e) {
+      console.log('Toss framework link generation failed', e);
+    }
+
+    const message = `[LoveCheck] 관계 온도 진단 결과: ${averageScore}점 ${statusText}\n\nAI 조언:\n${aiAdvice}\n\n나도 테스트하러 가기 👉 ${shareLink}`;
+
+    share({ message });
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <main className="flex-1 p-6 space-y-6 max-w-lg mx-auto w-full">
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm flex flex-col items-center text-center">
-          <Text typography="t5" color="gray600" className="dark:text-gray-400 mb-4">
+        <div className="bg-white rounded-3xl p-8 shadow-sm flex flex-col items-center text-center">
+          <Text typography="t5" color="gray600" className="mb-4">
             관계 온도 진단 결과
           </Text>
           <div className="flex items-baseline justify-center mb-4">
@@ -78,17 +108,17 @@ export default function Result() {
             </span>
             <span className="text-2xl font-semibold text-gray-400 ml-1">점</span>
           </div>
-          <Text typography="t3" fontWeight="bold" className="text-gray-900 dark:text-white">
-            {getStatusText(averageScore)}
+          <Text typography="t3" fontWeight="bold" className="text-gray-900">
+            {statusText}
           </Text>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm">
+        <div className="bg-white rounded-3xl p-8 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
               <span className="text-lg">🤖</span>
             </div>
-            <Text typography="t5" fontWeight="bold" className="text-gray-900 dark:text-white">AI 맞춤 분석 및 조언</Text>
+            <Text typography="t5" fontWeight="bold" className="text-gray-900">AI 맞춤 분석 및 조언</Text>
           </div>
 
           {isLoading ? (
@@ -103,8 +133,8 @@ export default function Result() {
                   {aiSummary}
                 </div>
               )}
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl">
-                <Text typography="t6" className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+              <div className="bg-blue-50 p-5 rounded-2xl">
+                <Text typography="t6" className="text-gray-800 leading-relaxed whitespace-pre-wrap">
                   {aiAdvice.replace(aiSummary + '\n\n', '')}
                 </Text>
               </div>
@@ -129,11 +159,7 @@ export default function Result() {
             color="primary"
             className="flex-1 rounded-2xl"
             disabled={isLoading}
-            onClick={() => {
-              share({
-                message: `[LoveCheck] 관계 온도 진단 결과: ${averageScore}점 ${getStatusText(averageScore)}\n\nAI 조언:\n${aiAdvice}`
-              });
-            }}
+            onClick={handleShare}
           >
             <div className="flex items-center justify-center gap-2">
               <Share2 size={18} />

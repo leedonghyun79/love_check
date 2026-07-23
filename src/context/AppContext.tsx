@@ -92,28 +92,28 @@ export function AppProvider({ children }: AppProviderProps) {
   /**
    * 온보딩 완료 처리
    */
-  const completeOnboarding = (data: { userName: string; partnerName: string; startDate: string }) => {
+  const completeOnboarding = React.useCallback((data: { userName: string; partnerName: string; startDate: string }) => {
     setState(prev => ({
       ...prev,
       ...data,
       isOnboardingComplete: true,
     }));
-  };
+  }, []);
 
   /**
    * 프로필 수정
    */
-  const updateProfile = (data: { userName?: string; partnerName?: string; startDate?: string }) => {
+  const updateProfile = React.useCallback((data: { userName?: string; partnerName?: string; startDate?: string }) => {
     setState(prev => ({
       ...prev,
       ...data,
     }));
-  };
+  }, []);
 
   /**
    * 히스토리 추가
    */
-  const addHistory = (item: { type: string; score: number; advice: string }) => {
+  const addHistory = React.useCallback((item: { type: string; score: number; advice: string }) => {
     setState(prev => ({
       ...prev,
       history: [
@@ -121,23 +121,23 @@ export function AppProvider({ children }: AppProviderProps) {
         ...prev.history,
       ].slice(0, 50), // Keep last 50
     }));
-  };
+  }, []);
 
   /**
    * 앱 초기화 (개발/테스트용)
    */
-  const resetApp = () => {
+  const resetApp = React.useCallback(() => {
     setState(initialState);
     localStorage.removeItem(STORAGE_KEY);
-  };
+  }, []);
 
-  const value: AppContextValue = {
+  const value = React.useMemo(() => ({
     ...state,
     completeOnboarding,
     resetApp,
     updateProfile,
     addHistory,
-  };
+  }), [state, completeOnboarding, resetApp, updateProfile, addHistory]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

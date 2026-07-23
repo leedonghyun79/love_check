@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/context/appcontext.tsx","./src/data/dailyquestions.ts","./src/data/questions.ts","./src/hooks/useadmob.ts","./src/hooks/usetossexittrap.ts","./src/pages/diagnosis.tsx","./src/pages/home.tsx","./src/pages/onboarding.tsx","./src/pages/result.tsx","./src/services/aiservice.ts"],"version":"5.6.3"}

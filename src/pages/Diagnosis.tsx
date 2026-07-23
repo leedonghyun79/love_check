@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Text } from '@toss/tds-mobile';
-import { ChevronLeft } from 'lucide-react';
 import { DAILY_QUESTIONS, WEEKLY_QUESTIONS, MONTHLY_QUESTIONS, Question } from '../data/questions';
+
+import { useAdMob } from '../hooks/useAdMob';
 
 export default function Diagnosis() {
   const navigate = useNavigate();
+  const { showInterstitial, isLoading: isAdLoading } = useAdMob();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const type = queryParams.get('type') || 'daily';
@@ -19,6 +21,10 @@ export default function Diagnosis() {
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
   const [isFinished, setIsFinished] = useState(false);
 
+  useEffect(() => {
+    document.title = '연애온도';
+  }, []);
+
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
@@ -29,47 +35,58 @@ export default function Diagnosis() {
 
     // 선택 후 다음 질문으로 넘어가기 전 시각적 피드백을 위해 약간의 지연 시간을 둡니다.
     setTimeout(() => {
+      const nextIndex = currentIndex + 1;
       const newAnswers = [...answers, score];
       setAnswers(newAnswers);
 
-      if (currentIndex < questions.length - 1) {
-        setSelectedScore(null); // 선택 상태 초기화
-        setCurrentIndex(currentIndex + 1);
+      if (nextIndex < questions.length) {
+        setSelectedScore(null);
+        setCurrentIndex(nextIndex);
+        // 질문 이동 시 히스토리 추가 (뒤로가기 대응)
+        window.history.pushState({ questionIndex: nextIndex }, '');
       } else {
-        // 모든 질문 답변 완료
         setIsFinished(true);
+        // 완료 상태 히스토리 추가
+        window.history.pushState({ finished: true }, '');
       }
     }, 300);
   };
 
-  const handleShowResult = () => {
-    // 여기에 실제 광고 로직을 추가할 수 있습니다.
-    // 현재는 바로 결과 페이지로 이동합니다.
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.finished) {
+        setIsFinished(true); // 혹시 모르니 보정
+        return;
+      }
+
+      if (event.state && typeof event.state.questionIndex === 'number') {
+        const newIndex = event.state.questionIndex;
+        setIsFinished(false);
+        setCurrentIndex(newIndex);
+        setAnswers(prev => prev.slice(0, newIndex)); // 이전 답들까지만 유지
+        setSelectedScore(null);
+      } else {
+        // 첫 진입 시점(state 없음)으로 돌아오면 질문 인덱스 초기화
+        setIsFinished(false);
+        setCurrentIndex(0);
+        setAnswers([]);
+        setSelectedScore(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [questions.length]);
+
+  const handleShowResult = async () => {
+    // 광고 표시 후 결과 페이지로 이동
+    await showInterstitial();
     navigate('/result', { state: { type, answers, questions } });
   };
 
-  const handleBack = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-      setAnswers(answers.slice(0, -1));
-      setSelectedScore(null);
-    } else {
-      navigate(-1);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
-      <header className="p-4 flex items-center border-b dark:border-gray-800">
-        <button onClick={handleBack} className="p-2 -ml-2">
-          <ChevronLeft className="w-6 h-6 text-gray-900 dark:text-white" />
-        </button>
-        <Text typography="t5" fontWeight="bold" className="ml-2">
-          {type === 'daily' ? '일일 체크' : type === 'weekly' ? '주간 진단' : '월간 종합진단'}
-        </Text>
-      </header>
-
-      <div className="w-full h-1 bg-gray-100 dark:bg-gray-800">
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="w-full h-1 bg-gray-100">
         <div
           className="h-full bg-blue-500 transition-all duration-300"
           style={{ width: `${progress}%` }}
@@ -81,19 +98,20 @@ export default function Diagnosis() {
           <div className="text-center space-y-8">
             <div className="space-y-4">
               <div className="text-6xl mb-4">🎉</div>
-              <Text typography="t3" fontWeight="bold" className="text-gray-900 dark:text-white block">
+              <Text typography="t3" fontWeight="bold" className="text-gray-900 block">
                 모든 질문이 끝났습니다!
               </Text>
-              <Text typography="t6" color="gray600" className="dark:text-gray-400 block break-keep">
+              <Text typography="t6" color="gray600" className="block break-keep">
                 AI가 분석한 두 분의 관계 온도와<br />맞춤형 조언을 확인해보세요.
               </Text>
             </div>
 
             <button
               onClick={handleShowResult}
-              className="w-full py-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-2xl text-lg font-bold shadow-lg shadow-blue-200 transition-all flex items-center justify-center"
+              disabled={isAdLoading}
+              className={`w-full py-5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-2xl text-lg font-bold shadow-lg shadow-blue-200 transition-all flex items-center justify-center ${isAdLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              광고보고 결과확인하기
+              {isAdLoading ? '광고 로딩 중...' : '광고보고 결과확인하기'}
             </button>
           </div>
         ) : (
@@ -102,7 +120,7 @@ export default function Diagnosis() {
               <Text typography="t6" color="blue500" className="mb-2 block">
                 Q{currentIndex + 1} / {questions.length}
               </Text>
-              <Text typography="t3" fontWeight="bold" className="text-gray-900 dark:text-white break-keep">
+              <Text typography="t3" fontWeight="bold" className="text-gray-900 break-keep">
                 {currentQuestion.text}
               </Text>
             </div>
