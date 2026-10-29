@@ -3,8 +3,8 @@ import { GoogleAdMob } from '@apps-in-toss/web-framework';
 
 // 광고 ID 설정
 const AD_GROUP_IDS = {
-  REWARDED: 'ait.v2.live.6002720767dd45d2',      // 보상형 광고 ID (예시 ID)
-  INTERSTITIAL: 'ait.v2.live.1bbe4d0273b74498',  // 전면 광고 ID
+  REWARDED: 'ait.v2.live.1bbe4d0273b74498',
+  INTERSTITIAL: 'ait.v2.live.1bbe4d0273b74498',
 } as const;
 
 export type AdType = 'INTERSTITIAL' | 'REWARDED';

@@ -7,13 +7,10 @@ import { dailyQuestions } from '../data/dailyQuestions';
 import { share } from '@apps-in-toss/web-framework';
 import { useTossExitTrap } from '../hooks/useTossExitTrap';
 
-import { useAdMob } from '../hooks/useAdMob';
-
 export default function Home() {
   useTossExitTrap('연애온도');
   const navigate = useNavigate();
   const { userName, partnerName, startDate, history } = useApp();
-  const { showInterstitial, showRewarded, isLoading: isAdLoading, status: adStatus } = useAdMob();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 캐로셀 자동 스크롤
@@ -36,7 +33,7 @@ export default function Home() {
   }, []);
 
   const lastTest = history[0];
-  const lastScore = lastTest?.score || 0;
+  const lastScore = lastTest?.score ?? 36.5;
 
   // 사귄 날짜 계산
   const calculateDDay = () => {
@@ -55,14 +52,15 @@ export default function Home() {
 
   const dDay = calculateDDay();
 
-  const getColorTheme = (score: number) => {
+  const getColorTheme = (score: number, isInitial: boolean) => {
+    if (isInitial) return { text: 'text-rose-400', bg: 'bg-rose-50', border: 'border-rose-100', heart: 'text-rose-400' };
     if (score >= 80) return { text: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-100', heart: 'text-blue-500' };
     if (score >= 60) return { text: 'text-green-500', bg: 'bg-green-50', border: 'border-green-100', heart: 'text-green-500' };
     if (score >= 40) return { text: 'text-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-100', heart: 'text-yellow-500' };
     return { text: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100', heart: 'text-red-500' };
   };
 
-  const theme = getColorTheme(lastScore);
+  const theme = getColorTheme(lastScore, !lastTest);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -125,15 +123,15 @@ export default function Home() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-2xl font-bold text-gray-900">{lastScore}</span>
-                <span className="text-[10px] text-gray-400 font-medium">점</span>
+                <span className="text-[10px] text-gray-400 font-medium">도</span>
               </div>
             </div>
             <div className="flex-1">
               <Text typography="t5" fontWeight="bold" className="block mb-1 break-keep">
-                {lastScore >= 80 ? '매우 따뜻한 상태예요' : lastScore >= 60 ? '안정적인 상태예요' : lastScore >= 40 ? '관리가 필요해요' : '주의가 필요해요'}
+                {!lastTest ? '건강한 시작 온도예요' : lastScore >= 80 ? '매우 따뜻한 상태예요' : lastScore >= 60 ? '안정적인 상태예요' : lastScore >= 40 ? '관리가 필요해요' : '주의가 필요해요'}
               </Text>
               <Text typography="t7" className="text-gray-500 leading-tight break-keep">
-                {lastScore >= 80 ? '서로를 아끼는 마음이 충분히 전달되고 있어요.' : lastScore >= 60 ? '꾸준한 대화로 온기를 유지해 주세요.' : lastScore >= 40 ? '작은 오해가 쌓이지 않도록 대화가 필요해요.' : '솔직한 대화의 시간이 시급합니다.'}
+                {!lastTest ? '진단을 통해 두 사람의 현재 관계 온도를 확인해보세요.' : lastScore >= 80 ? '서로를 아끼는 마음이 충분히 전달되고 있어요.' : lastScore >= 60 ? '꾸준한 대화로 온기를 유지해 주세요.' : lastScore >= 40 ? '작은 오해가 쌓이지 않도록 대화가 필요해요.' : '솔직한 대화의 시간이 시급합니다.'}
               </Text>
             </div>
           </div>
@@ -293,34 +291,6 @@ export default function Home() {
           </section>
         )}
       </main>
-
-      {/* 광고 테스트 섹션 (개발자 확인용) */}
-      <section className="px-6 pb-10 max-w-lg mx-auto">
-        <div className="bg-gray-100 rounded-2xl p-4 border border-gray-200">
-          <Text typography="t6" fontWeight="bold" color="gray600" className="mb-2 block">광고 테스트 (개발용)</Text>
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => showInterstitial()}
-              disabled={isAdLoading}
-              className="w-full py-3 bg-white border border-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 active:bg-gray-100"
-            >
-              {isAdLoading ? '로딩 중...' : '전면 광고 테스트'}
-            </button>
-            <button
-              onClick={() => showRewarded()}
-              disabled={isAdLoading}
-              className="w-full py-3 bg-white border border-gray-300 rounded-xl text-sm font-medium hover:bg-gray-50 active:bg-gray-100"
-            >
-              {isAdLoading ? '로딩 중...' : '보상형 광고 테스트'}
-            </button>
-            {adStatus !== 'Ready' && (
-              <Text typography="t7" color="gray500" className="mt-2 text-center block break-all">
-                상태: {adStatus}
-              </Text>
-            )}
-          </div>
-        </div>
-      </section>
 
       <Spacing size={40} />
     </div>
